@@ -46,7 +46,8 @@ resource "aws_iam_policy" "policy" {
         ],
         "Resource": [
         "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.${var.component}*",
-        "arn:aws:ssm:us-east-1:553708275319:parameter/nexus*"
+        "arn:aws:ssm:us-east-1:553708275319:parameter/nexus*",
+        "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.docdb*"
           ]
       },
       {
@@ -98,13 +99,18 @@ resource "aws_security_group" "main" {
   )
 }
 
+
 resource "aws_launch_template" "main" {
-  name_prefix            = "${var.env}-${var.component}-template"
+  name                   = "${var.env}-${var.component}-template"
   image_id               = data.aws_ami.centos8.id
   instance_type          = var.instance_type
   vpc_security_group_ids = [aws_security_group.main.id]
+  user_data              = base64encode(templatefile("${path.module}/user-data.sh", { component = var.component, env = var.env }))
   iam_instance_profile {
     arn = aws_iam_instance_profile.profile.arn
+  }
+  instance_market_options {
+    market_type = "spot"
   }
 }
 
