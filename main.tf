@@ -31,6 +31,7 @@ resource "aws_iam_policy" "policy" {
   path        = "/"
   description = "${var.env}-${var.component}-parameter-store-policy"
 
+
   policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -43,7 +44,7 @@ resource "aws_iam_policy" "policy" {
           "ssm:GetParameters",
           "ssm:GetParameter"
         ],
-        "Resource" : "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.${var.component}*"
+        "Resource": "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.${var.component}*"
       },
       {
         "Sid" : "VisualEditor1",
