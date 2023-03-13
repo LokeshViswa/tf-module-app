@@ -1,6 +1,7 @@
 resource "aws_security_group" "main" {
   name        = "${var.env}-${var.component}-security-group"
-  description = "${var.env}-${var.component}-security-group"  vpc_id      = var.vpc_id
+  description = "${var.env}-${var.component}-security-group"
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "HTTP"
