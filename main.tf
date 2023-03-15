@@ -49,7 +49,8 @@ resource "aws_iam_policy" "policy" {
         "arn:aws:ssm:us-east-1:553708275319:parameter/nexus*",
         "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.docdb*",
         "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.elasticache*",
-        "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.rds*"
+        "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.rds*",
+        "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.rabbitmq*"
         ]
       },
       {
@@ -123,6 +124,7 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity    = var.desired_capacity
   force_delete        = true
   vpc_zone_identifier = var.subnet_ids
+  target_group_arns   = [aws_lb_target_group.target_group.arn]
 
   launch_template {
     id      = aws_launch_template.main.id
@@ -139,3 +141,27 @@ resource "aws_autoscaling_group" "asg" {
   }
 }
 
+resource "aws_route53_record" "app" {
+  zone_id = "Z10181653L4NCOVM5PP96"
+  name    = "${var.component}-${var.env}.lokeshviswa44.online"
+  type    = "CNAME"
+  ttl     = 30
+  records = [var.alb]
+}
+
+resource "aws_lb_target_group" "target_group" {
+  name     = "${var.component}-${var.env}"
+  port     = var.app_port
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 5
+    path                = "/health"
+    protocol            = "HTTP"
+    timeout             = 2
+  }
+}

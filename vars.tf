@@ -9,3 +9,5 @@ variable "min_size" {}
 variable "desired_capacity" {}
 variable "instance_type" {}
 variable "bastion_cidr" {}
+variable "alb" {}
+
