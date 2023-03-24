@@ -50,7 +50,9 @@ resource "aws_iam_policy" "policy" {
         "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.docdb*",
         "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.elasticache*",
         "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.rds*",
-        "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.rabbitmq*"
+        "arn:aws:ssm:us-east-1:553708275319:parameter/${var.env}.rabbitmq*",
+        "arn:aws:ssm:us-east-1:633788536644:parameter/grafana*",
+        "arn:aws:ssm:us-east-1:633788536644:parameter/${var.env}.ssh*"
         ]
       },
       {
@@ -87,6 +89,14 @@ resource "aws_security_group" "main" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = var.bastion_cidr
+  }
+
+  ingress {
+    description = "PROMETHEUS"
+    from_port   = 9100
+    to_port     = 9100
+    protocol    = "tcp"
+    cidr_blocks = var.monitor_cidr
   }
 
   egress {
@@ -141,6 +151,19 @@ resource "aws_autoscaling_group" "asg" {
   }
 }
 
+resource "aws_autoscaling_policy" "cpu-tracking-policy" {
+  name        = "whenCPULoadIncrease"
+  policy_type = "TargetTrackingScaling"
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 30.0
+  }
+  autoscaling_group_name = aws_autoscaling_group.asg.name
+}
+
+
 resource "aws_route53_record" "app" {
   zone_id = "Z10181653L4NCOVM5PP96"
   name    = "${var.component}-${var.env}.lokeshviswa44.online"
@@ -163,5 +186,56 @@ resource "aws_lb_target_group" "target_group" {
     path                = "/health"
     protocol            = "HTTP"
     timeout             = 2
+  }
+  deregistration_delay = 10
+}
+
+// THis is for backend components
+resource "aws_lb_listener_rule" "backend_rule" {
+  count        = var.listener_priority != 0 ? 1 : 0
+  listener_arn = var.listener
+  priority     = var.listener_priority
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.target_group.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.component}-${var.env}.lokeshviswa44.online"]
+    }
+  }
+}
+
+// This is only for frontend
+resource "aws_lb_listener" "frontend" {
+  count             = var.listener_priority == 0 ? 1 : 0
+  load_balancer_arn = var.alb_arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-1:633788536644:certificate/e0de402e-a390-4600-a292-bf3b5b926201"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.target_group.arn
+  }
+}
+
+
+resource "aws_lb_listener" "frontend_http" {
+  count             = var.listener_priority == 0 ? 1 : 0
+  load_balancer_arn = var.alb_arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
