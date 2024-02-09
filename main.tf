@@ -166,7 +166,7 @@ resource "aws_autoscaling_policy" "cpu-tracking-policy" {
 
 resource "aws_route53_record" "app" {
   zone_id = "Z10181653L4NCOVM5PP96"
-  name    = "${var.component}-${var.env}.lokeshviswa44.online"
+  name    = "${var.component}-${var.env}.lokesh33.online"
   type    = "CNAME"
   ttl     = 30
   records = [var.alb]
@@ -203,7 +203,7 @@ resource "aws_lb_listener_rule" "backend_rule" {
 
   condition {
     host_header {
-      values = ["${var.component}-${var.env}.lokeshviswa44.online"]
+      values = ["${var.component}-${var.env}.lokesh33.online"]
     }
   }
 }
