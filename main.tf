@@ -165,7 +165,7 @@ resource "aws_autoscaling_policy" "cpu-tracking-policy" {
 
 
 resource "aws_route53_record" "app" {
-  zone_id = "Z10181653L4NCOVM5PP96"
+  zone_id = "Z06645392X66P7VWW7UVL"
   name    = "${var.component}-${var.env}.lokesh33.online"
   type    = "CNAME"
   ttl     = 30
